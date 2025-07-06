@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://messhub.app/sitemap.xml
+
+# Crawl-delay for better server performance
+Crawl-delay: 1
+
+# Block access to sensitive areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /sw.js
+Disallow: /workbox-*
+
+# Allow access to PWA assets
+Allow: /manifest.json
+Allow: /icon-*.png
+Allow: /offline.html

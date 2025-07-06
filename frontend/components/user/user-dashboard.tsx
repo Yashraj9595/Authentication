@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { AccessibilityPanel } from "@/components/ui/accessibility"
 import {
   Search,
   ShoppingCart,
@@ -43,11 +44,15 @@ import {
   Soup,
   Cookie,
   Cake,
+  Wifi,
+  WifiOff,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { usePWA } from "@/components/pwa/pwa-provider"
 
 export function UserDashboard() {
   const { user, logout } = useAuth()
+  const { isOnline } = usePWA()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<"home" | "orders" | "favorites" | "profile">("home")
 
@@ -145,6 +150,21 @@ export function UserDashboard() {
 
   const HomeTab = () => (
     <div className="space-y-6 lg:space-y-8">
+      {/* Skip Link for Accessibility */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+
+      {/* Connection Status */}
+      {!isOnline && (
+        <div className="flex items-center gap-2 p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20 mb-4">
+          <WifiOff size={16} className="text-yellow-500" />
+          <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+            You're offline. Some features may be limited.
+          </span>
+        </div>
+      )}
+
       {/* Mobile Hero Section */}
       <div className="lg:hidden">
         <Card className="bg-gradient-to-r from-primary-blue to-secondary-blue text-white p-6 rounded-2xl border-0 shadow-lg">
@@ -212,20 +232,27 @@ export function UserDashboard() {
       </div>
 
       {/* Search Bar */}
-      <div className="relative">
+      <div className="relative" id="main-content">
+        <label htmlFor="search-input" className="sr-only">
+          Search restaurants, cuisines, or dishes
+        </label>
         <Search
           className="absolute left-4 lg:left-6 top-1/2 transform -translate-y-1/2 text-muted-foreground"
           size={20}
+          aria-hidden="true"
         />
         <Input
+          id="search-input"
           placeholder="Search restaurants, cuisines, or dishes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-12 lg:pl-16 pr-4 lg:pr-6 py-3 lg:py-4 text-base lg:text-lg bg-background border-2 border-border rounded-xl lg:rounded-2xl focus:border-primary-blue transition-all duration-300"
+          aria-label="Search for restaurants, cuisines, or dishes"
         />
         <Button
           size="sm"
           className="absolute right-2 lg:right-3 top-1/2 transform -translate-y-1/2 gradient-primary text-white rounded-lg lg:rounded-xl px-4 lg:px-6"
+          aria-label="Open filter options"
         >
           <Filter size={16} className="lg:w-5 lg:h-5" />
           <span className="hidden lg:inline ml-2">Filter</span>
@@ -233,216 +260,277 @@ export function UserDashboard() {
       </div>
 
       {/* Categories */}
-      <div className="space-y-4 lg:space-y-6">
+      <section className="space-y-4 lg:space-y-6" aria-labelledby="categories-heading">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl lg:text-3xl font-bold text-foreground">Browse Categories</h3>
-          <Button variant="ghost" className="text-primary-blue hover:text-dark-blue text-base lg:text-lg">
-            View All <ArrowRight size={16} className="lg:w-5 lg:h-5 ml-1" />
+          <h3 id="categories-heading" className="text-xl lg:text-3xl font-bold text-foreground">
+            Browse Categories
+          </h3>
+          <Button 
+            variant="ghost" 
+            className="text-primary-blue hover:text-dark-blue text-base lg:text-lg"
+            aria-label="View all categories"
+          >
+            View All <ArrowRight size={16} className="lg:w-5 lg:h-5 ml-1" aria-hidden="true" />
           </Button>
         </div>
 
         {/* Mobile Categories */}
-        <div className="lg:hidden grid grid-cols-4 gap-3">
+        <div className="lg:hidden grid grid-cols-4 gap-3" role="list">
           {categories.slice(0, 8).map((category) => {
             const Icon = category.icon
             return (
               <Card
                 key={category.name}
-                className="p-4 text-center hover:shadow-md transition-all duration-300 cursor-pointer border-0 bg-card"
+                className="p-4 text-center hover:shadow-md transition-all duration-300 cursor-pointer border-0 bg-card focus-within:ring-2 focus-within:ring-primary"
+                role="listitem"
               >
-                <div
-                  className={`w-12 h-12 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg`}
+                <button
+                  className="w-full focus:outline-none"
+                  aria-label={`Browse ${category.name} restaurants, ${category.count} available`}
                 >
-                  <Icon size={20} className="text-white" />
-                </div>
-                <p className="text-xs font-semibold text-foreground truncate">{category.name}</p>
-                <p className="text-xs text-muted-foreground">{category.count}</p>
+                  <div
+                    className={`w-12 h-12 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg`}
+                  >
+                    <Icon size={20} className="text-white" aria-hidden="true" />
+                  </div>
+                  <p className="text-xs font-semibold text-foreground truncate">{category.name}</p>
+                  <p className="text-xs text-muted-foreground">{category.count}</p>
+                </button>
               </Card>
             )
           })}
         </div>
 
         {/* Desktop Categories */}
-        <div className="hidden lg:grid grid-cols-4 gap-6">
+        <div className="hidden lg:grid grid-cols-4 gap-6" role="list">
           {categories.map((category) => {
             const Icon = category.icon
             return (
               <Card
                 key={category.name}
-                className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-card group"
+                className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-card group focus-within:ring-2 focus-within:ring-primary"
+                role="listitem"
               >
-                <div
-                  className={`w-20 h-20 bg-gradient-to-br ${category.color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl transition-shadow`}
+                <button
+                  className="w-full focus:outline-none"
+                  aria-label={`Browse ${category.name} restaurants, ${category.count} restaurants available`}
                 >
-                  <Icon size={32} className="text-white" />
-                </div>
-                <h4 className="text-xl font-bold text-foreground mb-2">{category.name}</h4>
-                <p className="text-lg text-muted-foreground">{category.count} restaurants</p>
+                  <div
+                    className={`w-20 h-20 bg-gradient-to-br ${category.color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:shadow-xl transition-shadow`}
+                  >
+                    <Icon size={32} className="text-white" aria-hidden="true" />
+                  </div>
+                  <h4 className="text-xl font-bold text-foreground mb-2">{category.name}</h4>
+                  <p className="text-lg text-muted-foreground">{category.count} restaurants</p>
+                </button>
               </Card>
             )
           })}
         </div>
-      </div>
+      </section>
 
       {/* Featured Restaurants */}
-      <div className="space-y-4 lg:space-y-6">
+      <section className="space-y-4 lg:space-y-6" aria-labelledby="featured-heading">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl lg:text-3xl font-bold text-foreground">Featured Restaurants</h3>
-          <Button variant="ghost" className="text-primary-blue hover:text-dark-blue text-base lg:text-lg">
-            View All <ArrowRight size={16} className="lg:w-5 lg:h-5 ml-1" />
+          <h3 id="featured-heading" className="text-xl lg:text-3xl font-bold text-foreground">
+            Featured Restaurants
+          </h3>
+          <Button 
+            variant="ghost" 
+            className="text-primary-blue hover:text-dark-blue text-base lg:text-lg"
+            aria-label="View all featured restaurants"
+          >
+            View All <ArrowRight size={16} className="lg:w-5 lg:h-5 ml-1" aria-hidden="true" />
           </Button>
         </div>
 
         {/* Mobile Restaurant Cards */}
-        <div className="lg:hidden space-y-4">
+        <div className="lg:hidden space-y-4" role="list">
           {featuredRestaurants.map((restaurant) => {
             const Icon = restaurant.icon
             return (
               <Card
                 key={restaurant.id}
-                className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-primary"
+                role="listitem"
               >
-                <div className="flex">
-                  <div className="w-24 h-24 bg-gradient-to-br from-neutral-gray/20 to-neutral-gray/10 flex items-center justify-center">
-                    <Icon size={32} className="text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-bold text-foreground flex items-center gap-2">
-                          {restaurant.name}
-                          {restaurant.popular && <Crown size={16} className="text-yellow-500" />}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">{restaurant.cuisine}</p>
-                      </div>
-                      <Button size="sm" variant="ghost" className="p-1">
-                        <Heart size={16} className="text-muted-foreground" />
-                      </Button>
+                <button
+                  className="w-full text-left focus:outline-none"
+                  aria-label={`${restaurant.name}, ${restaurant.cuisine} cuisine, ${restaurant.rating} stars, ${restaurant.deliveryTime} delivery, ${restaurant.discount} offer`}
+                >
+                  <div className="flex">
+                    <div className="w-24 h-24 bg-gradient-to-br from-neutral-gray/20 to-neutral-gray/10 flex items-center justify-center">
+                      <Icon size={32} className="text-muted-foreground" aria-hidden="true" />
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Star size={14} className="text-yellow-500 fill-current" />
-                          <span className="font-semibold">{restaurant.rating}</span>
+                    <div className="flex-1 p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="font-bold text-foreground flex items-center gap-2">
+                            {restaurant.name}
+                            {restaurant.popular && (
+                              <Crown size={16} className="text-yellow-500" aria-label="Popular restaurant" />
+                            )}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">{restaurant.cuisine}</p>
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Clock size={14} />
-                          <span>{restaurant.deliveryTime}</span>
-                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="p-1"
+                          aria-label={`Add ${restaurant.name} to favorites`}
+                        >
+                          <Heart size={16} className="text-muted-foreground" />
+                        </Button>
                       </div>
-                      <div className="bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-lg text-xs font-semibold">
-                        {restaurant.discount}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Star size={14} className="text-yellow-500 fill-current" aria-hidden="true" />
+                            <span className="font-semibold">{restaurant.rating}</span>
+                            <span className="sr-only">out of 5 stars</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Clock size={14} aria-hidden="true" />
+                            <span>{restaurant.deliveryTime}</span>
+                          </div>
+                        </div>
+                        <div className="bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-1 rounded-lg text-xs font-semibold">
+                          {restaurant.discount}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               </Card>
             )
           })}
         </div>
 
         {/* Desktop Restaurant Cards */}
-        <div className="hidden lg:grid grid-cols-2 gap-8">
+        <div className="hidden lg:grid grid-cols-2 gap-8" role="list">
           {featuredRestaurants.map((restaurant) => {
             const Icon = restaurant.icon
             return (
               <Card
                 key={restaurant.id}
-                className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 group cursor-pointer"
+                className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 group cursor-pointer focus-within:ring-2 focus-within:ring-primary"
+                role="listitem"
               >
-                <div className="relative">
-                  <div className="h-48 bg-gradient-to-br from-neutral-gray/20 to-neutral-gray/10 flex items-center justify-center">
-                    <Icon size={64} className="text-muted-foreground group-hover:scale-110 transition-transform" />
-                  </div>
-                  {restaurant.popular && (
-                    <div className="absolute top-4 left-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
-                      <Flame size={14} />
-                      Popular
+                <button
+                  className="w-full text-left focus:outline-none"
+                  aria-label={`${restaurant.name}, ${restaurant.cuisine} cuisine, ${restaurant.rating} stars, ${restaurant.deliveryTime} delivery, ${restaurant.discount} offer`}
+                >
+                  <div className="relative">
+                    <div className="h-48 bg-gradient-to-br from-neutral-gray/20 to-neutral-gray/10 flex items-center justify-center">
+                      <Icon size={64} className="text-muted-foreground group-hover:scale-110 transition-transform" aria-hidden="true" />
                     </div>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="absolute top-4 right-4 bg-white/90 hover:bg-white text-muted-foreground hover:text-red-500 rounded-full p-2 shadow-lg"
-                  >
-                    <Heart size={18} />
-                  </Button>
-                  <div className="absolute bottom-4 right-4 bg-green-500/90 text-white px-4 py-2 rounded-xl text-sm font-bold backdrop-blur-sm">
-                    {restaurant.discount}
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h4 className="text-2xl font-bold text-foreground mb-1">{restaurant.name}</h4>
-                      <p className="text-lg text-muted-foreground">{restaurant.cuisine} Cuisine</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-2">
-                        <Star size={18} className="text-yellow-500 fill-current" />
-                        <span className="font-bold text-lg">{restaurant.rating}</span>
+                    {restaurant.popular && (
+                      <div className="absolute top-4 left-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
+                        <Flame size={14} aria-hidden="true" />
+                        Popular
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock size={18} />
-                        <span className="text-base">{restaurant.deliveryTime}</span>
-                      </div>
-                    </div>
-                    <Button className="gradient-primary text-white rounded-xl px-6 py-2 font-semibold hover:shadow-lg transition-all">
-                      Order Now
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute top-4 right-4 bg-white/90 hover:bg-white text-muted-foreground hover:text-red-500 rounded-full p-2 shadow-lg"
+                      aria-label={`Add ${restaurant.name} to favorites`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Heart size={18} />
                     </Button>
+                    <div className="absolute bottom-4 right-4 bg-green-500/90 text-white px-4 py-2 rounded-xl text-sm font-bold backdrop-blur-sm">
+                      {restaurant.discount}
+                    </div>
                   </div>
-                </div>
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h4 className="text-2xl font-bold text-foreground mb-1">{restaurant.name}</h4>
+                        <p className="text-lg text-muted-foreground">{restaurant.cuisine} Cuisine</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                          <Star size={18} className="text-yellow-500 fill-current" aria-hidden="true" />
+                          <span className="font-bold text-lg">{restaurant.rating}</span>
+                          <span className="sr-only">out of 5 stars</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock size={18} aria-hidden="true" />
+                          <span className="text-base">{restaurant.deliveryTime}</span>
+                        </div>
+                      </div>
+                      <Button 
+                        className="gradient-primary text-white rounded-xl px-6 py-2 font-semibold hover:shadow-lg transition-all"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Order from ${restaurant.name}`}
+                      >
+                        Order Now
+                      </Button>
+                    </div>
+                  </div>
+                </button>
               </Card>
             )
           })}
         </div>
-      </div>
+      </section>
 
       {/* Quick Actions - Desktop Only */}
-      <div className="hidden lg:block">
-        <div className="grid grid-cols-3 gap-8">
-          <Card className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Truck size={28} className="text-white" />
-            </div>
-            <h4 className="text-xl font-bold text-foreground mb-2">Track Order</h4>
-            <p className="text-muted-foreground">Real-time delivery tracking</p>
+      <section className="hidden lg:block" aria-labelledby="quick-actions-heading">
+        <h3 id="quick-actions-heading" className="sr-only">Quick Actions</h3>
+        <div className="grid grid-cols-3 gap-8" role="list">
+          <Card className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 focus-within:ring-2 focus-within:ring-primary">
+            <button className="w-full focus:outline-none" aria-label="Track your current order">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Truck size={28} className="text-white" aria-hidden="true" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-2">Track Order</h4>
+              <p className="text-muted-foreground">Real-time delivery tracking</p>
+            </button>
           </Card>
-          <Card className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Gift size={28} className="text-white" />
-            </div>
-            <h4 className="text-xl font-bold text-foreground mb-2">Rewards</h4>
-            <p className="text-muted-foreground">Redeem your points</p>
+          <Card className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 focus-within:ring-2 focus-within:ring-primary">
+            <button className="w-full focus:outline-none" aria-label="View and redeem your reward points">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Gift size={28} className="text-white" aria-hidden="true" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-2">Rewards</h4>
+              <p className="text-muted-foreground">Redeem your points</p>
+            </button>
           </Card>
-          <Card className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Percent size={28} className="text-white" />
-            </div>
-            <h4 className="text-xl font-bold text-foreground mb-2">Offers</h4>
-            <p className="text-muted-foreground">Exclusive deals for you</p>
+          <Card className="p-8 text-center hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer border-0 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20 focus-within:ring-2 focus-within:ring-primary">
+            <button className="w-full focus:outline-none" aria-label="View exclusive offers and deals">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Percent size={28} className="text-white" aria-hidden="true" />
+              </div>
+              <h4 className="text-xl font-bold text-foreground mb-2">Offers</h4>
+              <p className="text-muted-foreground">Exclusive deals for you</p>
+            </button>
           </Card>
         </div>
-      </div>
+      </section>
     </div>
   )
 
   const OrdersTab = () => (
-    <div className="space-y-6 lg:space-y-8">
+    <section className="space-y-6 lg:space-y-8" aria-labelledby="orders-heading">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl lg:text-3xl font-bold text-foreground">Your Orders</h3>
-        <Button className="gradient-primary text-white rounded-xl lg:rounded-2xl px-4 lg:px-6 py-2 lg:py-3 font-semibold">
-          <Plus size={16} className="lg:w-5 lg:h-5 mr-2" />
+        <h3 id="orders-heading" className="text-xl lg:text-3xl font-bold text-foreground">Your Orders</h3>
+        <Button 
+          className="gradient-primary text-white rounded-xl lg:rounded-2xl px-4 lg:px-6 py-2 lg:py-3 font-semibold"
+          aria-label="Place a new order"
+        >
+          <Plus size={16} className="lg:w-5 lg:h-5 mr-2" aria-hidden="true" />
           New Order
         </Button>
       </div>
 
       {/* Mobile Orders */}
-      <div className="lg:hidden space-y-4">
+      <div className="lg:hidden space-y-4" role="list">
         {recentOrders.map((order) => (
-          <Card key={order.id} className="p-4 border-0 shadow-lg">
+          <Card key={order.id} className="p-4 border-0 shadow-lg focus-within:ring-2 focus-within:ring-primary" role="listitem">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h4 className="font-bold text-foreground">{order.restaurant}</h4>
@@ -458,21 +546,31 @@ export function UserDashboard() {
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">{order.items.join(", ")}</p>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" role="img" aria-label={`${order.rating} out of 5 stars`}>
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
                       size={14}
                       className={i < order.rating ? "text-yellow-500 fill-current" : "text-neutral-gray"}
+                      aria-hidden="true"
                     />
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="text-xs bg-transparent">
-                    <Eye size={12} className="mr-1" />
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-xs bg-transparent"
+                    aria-label={`View details for order from ${order.restaurant}`}
+                  >
+                    <Eye size={12} className="mr-1" aria-hidden="true" />
                     View
                   </Button>
-                  <Button size="sm" className="gradient-primary text-white text-xs">
+                  <Button 
+                    size="sm" 
+                    className="gradient-primary text-white text-xs"
+                    aria-label={`Reorder from ${order.restaurant}`}
+                  >
                     Reorder
                   </Button>
                 </div>
@@ -483,25 +581,26 @@ export function UserDashboard() {
       </div>
 
       {/* Desktop Orders */}
-      <div className="hidden lg:block space-y-6">
+      <div className="hidden lg:block space-y-6" role="list">
         {recentOrders.map((order) => (
-          <Card key={order.id} className="p-8 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card key={order.id} className="p-8 border-0 shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-primary" role="listitem">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary-blue to-secondary-blue rounded-2xl flex items-center justify-center">
-                  <ChefHat size={28} className="text-white" />
+                  <ChefHat size={28} className="text-white" aria-hidden="true" />
                 </div>
                 <div>
                   <h4 className="text-2xl font-bold text-foreground mb-1">{order.restaurant}</h4>
                   <p className="text-lg text-muted-foreground mb-2">{order.items.join(", ")}</p>
                   <div className="flex items-center gap-4">
                     <span className="text-base text-muted-foreground">{order.date}</span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" role="img" aria-label={`${order.rating} out of 5 stars`}>
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
                           size={16}
                           className={i < order.rating ? "text-yellow-500 fill-current" : "text-neutral-gray"}
+                          aria-hidden="true"
                         />
                       ))}
                     </div>
@@ -516,36 +615,45 @@ export function UserDashboard() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" className="px-6 py-3 text-base bg-transparent">
-                    <Eye size={18} className="mr-2" />
+                  <Button 
+                    variant="outline" 
+                    className="px-6 py-3 text-base bg-transparent"
+                    aria-label={`View details for order from ${order.restaurant}`}
+                  >
+                    <Eye size={18} className="mr-2" aria-hidden="true" />
                     View Details
                   </Button>
-                  <Button className="gradient-primary text-white px-6 py-3 text-base">Reorder</Button>
+                  <Button 
+                    className="gradient-primary text-white px-6 py-3 text-base"
+                    aria-label={`Reorder from ${order.restaurant}`}
+                  >
+                    Reorder
+                  </Button>
                 </div>
               </div>
             </div>
           </Card>
         ))}
       </div>
-    </div>
+    </section>
   )
 
   const FavoritesTab = () => (
-    <div className="space-y-6 lg:space-y-8">
+    <section className="space-y-6 lg:space-y-8" aria-labelledby="favorites-heading">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl lg:text-3xl font-bold text-foreground">Your Favorites</h3>
+        <h3 id="favorites-heading" className="text-xl lg:text-3xl font-bold text-foreground">Your Favorites</h3>
         <div className="text-base lg:text-lg text-muted-foreground">{userStats.favoriteRestaurants} restaurants</div>
       </div>
 
       {/* Mobile Favorites */}
-      <div className="lg:hidden grid grid-cols-1 gap-4">
+      <div className="lg:hidden grid grid-cols-1 gap-4" role="list">
         {featuredRestaurants.slice(0, 3).map((restaurant) => {
           const Icon = restaurant.icon
           return (
-            <Card key={restaurant.id} className="overflow-hidden border-0 shadow-lg">
+            <Card key={restaurant.id} className="overflow-hidden border-0 shadow-lg focus-within:ring-2 focus-within:ring-primary" role="listitem">
               <div className="flex">
                 <div className="w-20 h-20 bg-gradient-to-br from-neutral-gray/20 to-neutral-gray/10 flex items-center justify-center">
-                  <Icon size={28} className="text-muted-foreground" />
+                  <Icon size={28} className="text-muted-foreground" aria-hidden="true" />
                 </div>
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between mb-2">
@@ -553,16 +661,26 @@ export function UserDashboard() {
                       <h4 className="font-bold text-foreground">{restaurant.name}</h4>
                       <p className="text-sm text-muted-foreground">{restaurant.cuisine}</p>
                     </div>
-                    <Button size="sm" variant="ghost" className="p-1">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="p-1"
+                      aria-label={`Remove ${restaurant.name} from favorites`}
+                    >
                       <Heart size={16} className="text-red-500 fill-current" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <Star size={14} className="text-yellow-500 fill-current" />
+                      <Star size={14} className="text-yellow-500 fill-current" aria-hidden="true" />
                       <span className="font-semibold text-sm">{restaurant.rating}</span>
+                      <span className="sr-only">out of 5 stars</span>
                     </div>
-                    <Button size="sm" className="gradient-primary text-white text-xs">
+                    <Button 
+                      size="sm" 
+                      className="gradient-primary text-white text-xs"
+                      aria-label={`Order from ${restaurant.name}`}
+                    >
                       Order Now
                     </Button>
                   </div>
@@ -574,22 +692,24 @@ export function UserDashboard() {
       </div>
 
       {/* Desktop Favorites */}
-      <div className="hidden lg:grid grid-cols-2 gap-8">
+      <div className="hidden lg:grid grid-cols-2 gap-8" role="list">
         {featuredRestaurants.map((restaurant) => {
           const Icon = restaurant.icon
           return (
             <Card
               key={restaurant.id}
-              className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 group cursor-pointer"
+              className="overflow-hidden border-0 shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 group cursor-pointer focus-within:ring-2 focus-within:ring-primary"
+              role="listitem"
             >
               <div className="relative">
                 <div className="h-48 bg-gradient-to-br from-neutral-gray/20 to-neutral-gray/10 flex items-center justify-center">
-                  <Icon size={64} className="text-muted-foreground group-hover:scale-110 transition-transform" />
+                  <Icon size={64} className="text-muted-foreground group-hover:scale-110 transition-transform" aria-hidden="true" />
                 </div>
                 <Button
                   size="sm"
                   variant="ghost"
                   className="absolute top-4 right-4 bg-white/90 hover:bg-white text-red-500 rounded-full p-2 shadow-lg"
+                  aria-label={`Remove ${restaurant.name} from favorites`}
                 >
                   <Heart size={18} className="fill-current" />
                 </Button>
@@ -604,15 +724,19 @@ export function UserDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
-                      <Star size={18} className="text-yellow-500 fill-current" />
+                      <Star size={18} className="text-yellow-500 fill-current" aria-hidden="true" />
                       <span className="font-bold text-lg">{restaurant.rating}</span>
+                      <span className="sr-only">out of 5 stars</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock size={18} />
+                      <Clock size={18} aria-hidden="true" />
                       <span className="text-base">{restaurant.deliveryTime}</span>
                     </div>
                   </div>
-                  <Button className="gradient-primary text-white rounded-xl px-6 py-2 font-semibold hover:shadow-lg transition-all">
+                  <Button 
+                    className="gradient-primary text-white rounded-xl px-6 py-2 font-semibold hover:shadow-lg transition-all"
+                    aria-label={`Order from ${restaurant.name}`}
+                  >
                     Order Now
                   </Button>
                 </div>
@@ -621,15 +745,19 @@ export function UserDashboard() {
           )
         })}
       </div>
-    </div>
+    </section>
   )
 
   const ProfileTab = () => (
-    <div className="space-y-6 lg:space-y-8">
+    <section className="space-y-6 lg:space-y-8" aria-labelledby="profile-heading">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl lg:text-3xl font-bold text-foreground">Profile Settings</h3>
-        <Button variant="outline" className="text-base lg:text-lg bg-transparent">
-          <Settings size={16} className="lg:w-5 lg:h-5 mr-2" />
+        <h3 id="profile-heading" className="text-xl lg:text-3xl font-bold text-foreground">Profile Settings</h3>
+        <Button 
+          variant="outline" 
+          className="text-base lg:text-lg bg-transparent"
+          aria-label="Edit your profile information"
+        >
+          <Settings size={16} className="lg:w-5 lg:h-5 mr-2" aria-hidden="true" />
           Edit Profile
         </Button>
       </div>
@@ -638,7 +766,7 @@ export function UserDashboard() {
       <div className="lg:hidden space-y-6">
         <Card className="p-6 text-center border-0 shadow-lg">
           <div className="w-20 h-20 bg-gradient-to-br from-primary-blue to-secondary-blue rounded-full flex items-center justify-center mx-auto mb-4">
-            <User size={32} className="text-white" />
+            <User size={32} className="text-white" aria-hidden="true" />
           </div>
           <h4 className="text-xl font-bold text-foreground mb-1">{user?.name}</h4>
           <p className="text-muted-foreground mb-4">{user?.email}</p>
@@ -654,7 +782,7 @@ export function UserDashboard() {
           </div>
         </Card>
 
-        <div className="space-y-3">
+        <nav className="space-y-3" aria-label="Profile navigation">
           {[
             { icon: CreditCard, label: "Payment Methods", color: "from-blue-500 to-blue-600" },
             { icon: MapPin, label: "Delivery Addresses", color: "from-green-500 to-green-600" },
@@ -665,20 +793,20 @@ export function UserDashboard() {
           ].map((item) => {
             const Icon = item.icon
             return (
-              <Card key={item.label} className="p-4 border-0 shadow-md hover:shadow-lg transition-all cursor-pointer">
-                <div className="flex items-center gap-4">
+              <Card key={item.label} className="p-4 border-0 shadow-md hover:shadow-lg transition-all cursor-pointer focus-within:ring-2 focus-within:ring-primary">
+                <button className="w-full flex items-center gap-4 text-left focus:outline-none" aria-label={`Go to ${item.label}`}>
                   <div
                     className={`w-10 h-10 bg-gradient-to-br ${item.color} rounded-xl flex items-center justify-center`}
                   >
-                    <Icon size={18} className="text-white" />
+                    <Icon size={18} className="text-white" aria-hidden="true" />
                   </div>
                   <span className="font-semibold text-foreground">{item.label}</span>
-                  <ArrowRight size={16} className="text-muted-foreground ml-auto" />
-                </div>
+                  <ArrowRight size={16} className="text-muted-foreground ml-auto" aria-hidden="true" />
+                </button>
               </Card>
             )
           })}
-        </div>
+        </nav>
       </div>
 
       {/* Desktop Profile */}
@@ -687,7 +815,7 @@ export function UserDashboard() {
           <div className="col-span-1">
             <Card className="p-8 text-center border-0 shadow-lg">
               <div className="w-32 h-32 bg-gradient-to-br from-primary-blue to-secondary-blue rounded-full flex items-center justify-center mx-auto mb-6">
-                <User size={64} className="text-white" />
+                <User size={64} className="text-white" aria-hidden="true" />
               </div>
               <h4 className="text-3xl font-bold text-foreground mb-2">{user?.name}</h4>
               <p className="text-xl text-muted-foreground mb-6">{user?.email}</p>
@@ -707,28 +835,28 @@ export function UserDashboard() {
           <div className="col-span-2 space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <Card className="p-6 border-0 shadow-lg text-center">
-                <BarChart3 size={32} className="text-primary-blue mx-auto mb-4" />
+                <BarChart3 size={32} className="text-primary-blue mx-auto mb-4" aria-hidden="true" />
                 <div className="text-3xl font-bold text-foreground mb-2">{userStats.totalOrders}</div>
                 <div className="text-lg text-muted-foreground">Total Orders</div>
               </Card>
               <Card className="p-6 border-0 shadow-lg text-center">
-                <Zap size={32} className="text-yellow-500 mx-auto mb-4" />
+                <Zap size={32} className="text-yellow-500 mx-auto mb-4" aria-hidden="true" />
                 <div className="text-3xl font-bold text-foreground mb-2">{userStats.rewardPoints}</div>
                 <div className="text-lg text-muted-foreground">Reward Points</div>
               </Card>
               <Card className="p-6 border-0 shadow-lg text-center">
-                <Heart size={32} className="text-red-500 mx-auto mb-4" />
+                <Heart size={32} className="text-red-500 mx-auto mb-4" aria-hidden="true" />
                 <div className="text-3xl font-bold text-foreground mb-2">{userStats.favoriteRestaurants}</div>
                 <div className="text-lg text-muted-foreground">Favorite Places</div>
               </Card>
               <Card className="p-6 border-0 shadow-lg text-center">
-                <DollarSign size={32} className="text-green-500 mx-auto mb-4" />
+                <DollarSign size={32} className="text-green-500 mx-auto mb-4" aria-hidden="true" />
                 <div className="text-3xl font-bold text-foreground mb-2">${userStats.savedAmount}</div>
                 <div className="text-lg text-muted-foreground">Total Saved</div>
               </Card>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <nav className="grid grid-cols-2 gap-6" aria-label="Profile settings navigation">
               {[
                 {
                   icon: CreditCard,
@@ -761,58 +889,66 @@ export function UserDashboard() {
                 return (
                   <Card
                     key={item.label}
-                    className="p-6 border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer group"
+                    className="p-6 border-0 shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer group focus-within:ring-2 focus-within:ring-primary"
                   >
-                    <div className="flex items-center gap-4 mb-4">
-                      <div
-                        className={`w-12 h-12 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center group-hover:shadow-lg transition-shadow`}
-                      >
-                        <Icon size={24} className="text-white" />
+                    <button className="w-full text-left focus:outline-none" aria-label={`Go to ${item.label} - ${item.desc}`}>
+                      <div className="flex items-center gap-4 mb-4">
+                        <div
+                          className={`w-12 h-12 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center group-hover:shadow-lg transition-shadow`}
+                        >
+                          <Icon size={24} className="text-white" aria-hidden="true" />
+                        </div>
+                        <ArrowRight
+                          size={20}
+                          className="text-muted-foreground ml-auto group-hover:text-primary-blue transition-colors"
+                          aria-hidden="true"
+                        />
                       </div>
-                      <ArrowRight
-                        size={20}
-                        className="text-muted-foreground ml-auto group-hover:text-primary-blue transition-colors"
-                      />
-                    </div>
-                    <h4 className="text-xl font-bold text-foreground mb-2">{item.label}</h4>
-                    <p className="text-base text-muted-foreground">{item.desc}</p>
+                      <h4 className="text-xl font-bold text-foreground mb-2">{item.label}</h4>
+                      <p className="text-base text-muted-foreground">{item.desc}</p>
+                    </button>
                   </Card>
                 )
               })}
-            </div>
+            </nav>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-neutral-gray/5 to-background">
       {/* Mobile Header */}
       <div className="lg:hidden">
-        <div className="sticky top-0 z-40 bg-card/95 backdrop-blur-lg border-b border-border">
+        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-lg border-b border-border safe-top">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary-blue to-secondary-blue rounded-full flex items-center justify-center">
-                <ChefHat size={20} className="text-white" />
+                <ChefHat size={20} className="text-white" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-foreground">MessMaster</h1>
+                <h1 className="text-lg font-bold text-foreground">MessHub</h1>
                 <p className="text-sm text-muted-foreground">Welcome back!</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" className="relative">
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="relative"
+                aria-label="View notifications, 3 unread"
+              >
                 <Bell size={20} className="text-muted-foreground" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" aria-hidden="true"></div>
               </Button>
               <ThemeToggle />
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Mobile Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t border-border">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-t border-border safe-bottom" aria-label="Main navigation">
           <div className="grid grid-cols-4 gap-1 p-2">
             {[
               { id: "home", icon: ChefHat, label: "Home" },
@@ -831,41 +967,43 @@ export function UserDashboard() {
                       ? "bg-primary-blue/10 text-primary-blue"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
+                  aria-label={`Go to ${tab.label}`}
+                  aria-current={activeTab === tab.id ? "page" : undefined}
                 >
-                  <Icon size={20} />
+                  <Icon size={20} aria-hidden="true" />
                   <span className="text-xs font-medium">{tab.label}</span>
                 </Button>
               )
             })}
           </div>
-        </div>
+        </nav>
 
         {/* Mobile Content */}
-        <div className="p-4 pb-20">
+        <main className="p-4 pb-20">
           {activeTab === "home" && <HomeTab />}
           {activeTab === "orders" && <OrdersTab />}
           {activeTab === "favorites" && <FavoritesTab />}
           {activeTab === "profile" && <ProfileTab />}
-        </div>
+        </main>
       </div>
 
       {/* Desktop Layout */}
       <div className="hidden lg:flex min-h-screen">
         {/* Desktop Sidebar */}
-        <div className="w-80 bg-card/50 backdrop-blur-lg border-r border-border flex flex-col">
+        <aside className="w-80 bg-card/50 backdrop-blur-lg border-r border-border flex flex-col" aria-label="Main navigation">
           <div className="p-8 border-b border-border">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-primary-blue to-secondary-blue rounded-2xl flex items-center justify-center shadow-lg">
-                <ChefHat size={32} className="text-white" />
+                <ChefHat size={32} className="text-white" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">MessMaster</h1>
+                <h1 className="text-2xl font-bold text-foreground">MessHub</h1>
                 <p className="text-base text-muted-foreground">Food Delivery</p>
               </div>
             </div>
             <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-primary-blue/10 to-primary-blue/5 rounded-2xl border border-primary-blue/20">
               <div className="w-12 h-12 bg-gradient-to-br from-primary-blue to-secondary-blue rounded-xl flex items-center justify-center">
-                <User size={24} className="text-white" />
+                <User size={24} className="text-white" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-bold text-foreground">{user?.name}</h3>
@@ -874,8 +1012,8 @@ export function UserDashboard() {
             </div>
           </div>
 
-          <div className="flex-1 p-6">
-            <nav className="space-y-2">
+          <nav className="flex-1 p-6" aria-label="Main navigation">
+            <div className="space-y-2">
               {[
                 { id: "home", icon: ChefHat, label: "Dashboard", desc: "Overview & recommendations" },
                 { id: "orders", icon: ShoppingCart, label: "My Orders", desc: "Track your food orders" },
@@ -893,8 +1031,10 @@ export function UserDashboard() {
                         ? "bg-primary-blue/10 text-primary-blue border border-primary-blue/20"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
+                    aria-label={`Go to ${tab.label} - ${tab.desc}`}
+                    aria-current={activeTab === tab.id ? "page" : undefined}
                   >
-                    <Icon size={24} className="mr-4" />
+                    <Icon size={24} className="mr-4" aria-hidden="true" />
                     <div className="text-left">
                       <div className="font-semibold text-base">{tab.label}</div>
                       <div className="text-sm opacity-70">{tab.desc}</div>
@@ -902,33 +1042,35 @@ export function UserDashboard() {
                   </Button>
                 )
               })}
-            </nav>
-          </div>
+            </div>
+          </nav>
 
           <div className="p-6 border-t border-border">
             <div className="space-y-3">
               <Button
                 variant="ghost"
                 className="w-full justify-start p-4 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                aria-label="Go to settings"
               >
-                <Settings size={24} className="mr-4" />
+                <Settings size={24} className="mr-4" aria-hidden="true" />
                 <span className="text-base">Settings</span>
               </Button>
               <Button
                 variant="ghost"
                 onClick={logout}
                 className="w-full justify-start p-4 rounded-2xl text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                aria-label="Sign out of your account"
               >
-                <LogOut size={24} className="mr-4" />
+                <LogOut size={24} className="mr-4" aria-hidden="true" />
                 <span className="text-base">Sign Out</span>
               </Button>
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* Desktop Main Content */}
         <div className="flex-1 flex flex-col">
-          <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-lg border-b border-border">
+          <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-lg border-b border-border">
             <div className="flex items-center justify-between p-8">
               <div>
                 <h2 className="text-3xl font-bold text-foreground capitalize">
@@ -942,7 +1084,12 @@ export function UserDashboard() {
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <Button size="lg" variant="ghost" className="relative">
+                <Button 
+                  size="lg" 
+                  variant="ghost" 
+                  className="relative"
+                  aria-label="View notifications, 3 unread"
+                >
                   <Bell size={24} className="text-muted-foreground" />
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
                     3
@@ -951,16 +1098,19 @@ export function UserDashboard() {
                 <ThemeToggle />
               </div>
             </div>
-          </div>
+          </header>
 
-          <div className="flex-1 p-8 overflow-y-auto">
+          <main className="flex-1 p-8 overflow-y-auto">
             {activeTab === "home" && <HomeTab />}
             {activeTab === "orders" && <OrdersTab />}
             {activeTab === "favorites" && <FavoritesTab />}
             {activeTab === "profile" && <ProfileTab />}
-          </div>
+          </main>
         </div>
       </div>
+
+      {/* Accessibility Panel */}
+      <AccessibilityPanel />
     </div>
   )
 }
