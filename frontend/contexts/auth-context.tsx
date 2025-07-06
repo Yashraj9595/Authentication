@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
 // Types
@@ -49,6 +49,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/a
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Global state to prevent multiple instances
+let globalAuthState = {
+  isInitialized: false,
+  isFetching: false,
+  lastFetchTime: 0
+};
+
 // API helper functions
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('token');
@@ -90,29 +97,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const initializationRef = useRef(false);
 
-  // Check for existing token on mount
+  // Debug: Log state changes
   useEffect(() => {
+    console.log('Auth state changed:', { 
+      hasUser: !!user, 
+      hasToken: !!token, 
+      isLoading, 
+      isAuthenticated: !!user && !!token 
+    });
+  }, [user, token, isLoading]);
+
+  // Initialize auth state only once
+  const initializeAuth = useCallback(async () => {
+    if (initializationRef.current || globalAuthState.isInitialized) {
+      console.log('Auth already initialized, skipping');
+      return;
+    }
+
+    console.log('Initializing auth...');
+    initializationRef.current = true;
+    globalAuthState.isInitialized = true;
+
     const savedToken = localStorage.getItem('token');
     if (savedToken) {
       setToken(savedToken);
-      fetchUserProfile();
+      await fetchUserProfile();
     } else {
       setIsLoading(false);
     }
   }, []);
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    const now = Date.now();
+    if (globalAuthState.isFetching || (now - globalAuthState.lastFetchTime < 1000)) {
+      return;
+    }
+
+    globalAuthState.isFetching = true;
+    globalAuthState.lastFetchTime = now;
+
     try {
       const data = await apiCall('/auth/me');
       setUser(data.data.user);
     } catch (error) {
       console.error('Failed to fetch user profile:', error);
-      logout();
+      // Clear invalid token and user data
+      localStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
     } finally {
       setIsLoading(false);
+      globalAuthState.isFetching = false;
     }
-  };
+  }, []);
+
+  // Initialize on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -305,6 +350,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    setIsLoading(false);
+    // Reset global state
+    globalAuthState.isInitialized = false;
+    globalAuthState.isFetching = false;
+    globalAuthState.lastFetchTime = 0;
+    initializationRef.current = false;
     toast.success('Logged out successfully');
   };
 

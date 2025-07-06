@@ -12,9 +12,9 @@ function HomeContent() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } else {
-        router.push('/auth');
+        router.replace('/auth');
       }
     }
   }, [isAuthenticated, isLoading, router]);

@@ -72,6 +72,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Disable React Strict Mode in development to prevent double renders
+  reactStrictMode: false,
   images: { 
     unoptimized: true,
     domains: ['images.pexels.com'],
@@ -180,5 +182,17 @@ const nextConfig = {
     ];
   },
 };
+
+// Global state prevents multiple instances
+let globalAuthState = {
+  isInitialized: false,
+  isFetching: false,
+  lastFetchTime: 0
+};
+
+// Rate limiting prevents rapid API calls
+if (globalAuthState.isFetching || (now - globalAuthState.lastFetchTime < 1000)) {
+  return;
+}
 
 module.exports = withPWA(nextConfig);
