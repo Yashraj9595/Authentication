@@ -9,6 +9,7 @@ import MessOwnerDashboard from '@/components/mess-owner/mess-owner-dashboard';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
 import { UserDashboard } from '@/components/user/user-dashboard';
 import { useEffect } from 'react';
+import { PWAStatus } from '@/components/pwa/pwa-status';
 
 export default function DashboardPage() {
   const { user, isLoading, isAuthenticated, logout } = useAuth();
@@ -105,6 +106,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* PWA Status Card */}
+        <div className="mb-8">
+          <PWAStatus />
+        </div>
+
         {/* Dashboard Content */}
         {getDashboardContent()}
 
@@ -133,4 +139,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-} 
+}
